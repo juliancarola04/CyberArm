@@ -30,7 +30,9 @@ socket_udp = socket.socket(socket.AF_INET, socket.SOCK_DGRAM) # Queremos usar UD
 intervalo_envio = 0.05 # Cada cuanto se va a enviar al ESP32. Se envían 20 paquetes por segundo si se deja en 20. 1s/0.05s = 20.
 ultimo_envio = 0.0
 
-cap = cv.VideoCapture(direccion_camara)
+cap = None
+conectado_previamente = False
+stream_activo = False
 
 # Ahora se van a configurar los distintos ángulos de actuación de cada uno de los servos.
 # Esto hay que irlo chequeando, pero el de base casi seguro se mantiene. Los otros 2 tenemos que verlo.
@@ -65,8 +67,8 @@ hombro_max = 90
 # Parámetros de control. Limita el ángulo hasta que lo toma. Si se sube o bajan los valores luego el ángulo será
 # mayor/menor.
 # Este parámetro sirve para el hombro.
-plam_size_min = 0.1
-plam_size_max = 0.5
+palm_size_min = 0.1
+palm_size_max = 0.5
 
 # Ángulo de la pinza. Se puede cambiar desp.
 claw_open_angle = 60
@@ -86,10 +88,26 @@ fist_threshold = 7
 def limitar(valor, minimo, maximo):
     return max(min(maximo, valor), minimo)
 
-def mapeo_rango(x, in_min, in_max, out_min, out_max):
-    return abs((x - in_min) * (out_max - out_min) // (in_max - in_min) + out_min)
+# def mapeo_rango(x, in_min, in_max, out_min, out_max):
+#     return abs((x - in_min) * (out_max - out_min) // (in_max - in_min) + out_min)
 
+
+def mapeo_rango(x, in_min, in_max, out_min, out_max):
+    return (x - in_min) * (out_max - out_min) // (in_max - in_min) + out_min
 #####
+
+def intentar_prender_camara(direccion_camara):
+    cap = cv.VideoCapture(direccion_camara)
+    
+    pudoAbrirse = cap.isOpened()
+    if not pudoAbrirse:
+        
+        # print("No se pudo abrir la cámara por alguna razón.")
+        cap.release()
+        return None
+    
+    return cap
+
 
 def enviar_angulos_wifi(angulos):
     global ultimo_envio
@@ -192,9 +210,9 @@ def landmark_to_servo_angle(hand_landmarks):
     )
 
     # Ángulo para el Hombro (eje Z)
-    palm_size_lim = limitar(palm_size, plam_size_min, plam_size_max)
+    palm_size_lim = limitar(palm_size, palm_size_min, palm_size_max)
     servo_angle[2] = mapeo_rango(
-        palm_size_lim, plam_size_min, plam_size_max, hombro_max, hombro_min
+        palm_size_lim, palm_size_min, palm_size_max, hombro_max, hombro_min
     )
 
     # Abrir o cerrar la pinza
@@ -208,9 +226,7 @@ def landmark_to_servo_angle(hand_landmarks):
     return servo_angle
 
 
-def mostrar_resultados(
-    result: HandLandmarkerResult, output_image: mp.Image, timestamp_ms: int
-):
+def mostrar_resultados(result: HandLandmarkerResult, output_image: mp.Image, timestamp_ms: int):
     global frameADibujar
     global servo_angle
     global prev_servo_angle
@@ -255,10 +271,49 @@ options = HandLandmarkerOptions(
 )
 
 with HandLandmarker.create_from_options(options) as landmarker:
-    while cap.isOpened():
+
+    while True:
+        if cap is None:
+            if conectado_previamente:
+                print("Pasó algo y se perdió la conexión con la cámara.")
+            else:
+                print("Intentando conectarse al DroidCam.")
+
+            cap = intentar_prender_camara(direccion_camara)
+
+            if cap is None:
+                if conectado_previamente:
+                    print("No se pudo reconectar al DroidCam...")
+                else:
+                    print("No se pudo conectar al DroidCam...")
+
+            
+            time.sleep(1)
+            continue
+    
         ret, frame = cap.read()
         if not ret:
+            if stream_activo:
+                print("Se estaba conectado al DroidCam, pero por alguna razón se perdió la conexión.")
+            else:
+                print("Se pudo abrir la cámara, pero no dio ninguna imagen.")
+
+            cap.release()
+            cap = None
+            stream_activo = False
+
+            time.sleep(1)
             continue
+
+        if not stream_activo:
+            if conectado_previamente:
+                print("Te pudiste reconectar correctamente.")
+            else:
+                print("Te pudiste conectar correctamente.")
+
+            conectado_previamente = True
+            stream_activo = True
+
 
         frame = cv.flip(frame, 1)
         rgb_frame = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
