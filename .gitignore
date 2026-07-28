@@ -1,2 +1,8 @@
+ESP32/.pio
+ESP32/.vscode
+ESP32/include
+ESP32/test
+ESP32/.gitignore
+ESP32/lib/README
 Python/.venv
 Python/hand_landmarker.task
