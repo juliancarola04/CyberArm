@@ -2,31 +2,49 @@
 // VEAN BIEN AMBOS CÓDIGOS, EN ESPECIAL EL OTRO.
 
 #include <Arduino.h>
-
 #include <WiFi.h>
 #include <WiFiUdp.h>
+#include "credenciales.h" // Hagan un archivo en la misma carpeta llamado credenciales.h y pongan el SSID y la pass de la red. Les dejo el archivo igual por las dudas.
+#include <ESP32Servo.h>
 
-// Datos de tu router.
-const char* ssid = "ACÁ PONGAN EL NOMBRE DE LA RED. RESPTEN LAS MAYUS Y MINUS";
-const char* password = "ACÁ LA CONTRASEÑA";
-
-// Debe coincidir con PUERTO_UDP en Python.
 const uint16_t PUERTO_UDP = 4210;
 
 WiFiUDP udp;
 
 char bufferPaquete[128];
 
-int anguloBase = 90;
-int anguloCodo = 90;
-int anguloHombro = 90;
-int anguloPinza = 60;
+unsigned long ultimo_paquete_recibido = 0;
+int limite_intervalo = 5000;
+
+Servo servoBase;
+Servo servoCodo;
+Servo servoHombro;
+Servo servoPinza;
+
+int anguloBaseDefault = 90;
+int anguloCodoDefault = 90;
+int anguloHombroDefault = 90;
+int anguloPinzaDefault = 60;
+
+int anguloBase = 0;
+int anguloCodo = 0;
+int anguloHombro = 0;
+int anguloPinza = 0;
+
+bool conectadoPreviamente = false;
+
+bool recibiendoPaquetes = false;
 
 void conectarWiFi() {
     WiFi.mode(WIFI_STA);
     WiFi.begin(ssid, password);
 
-    Serial.print("Conectando al WiFi");
+    if (conectadoPreviamente) {
+        Serial.print("Reconectándose al WiFi");
+    }
+    else {
+        Serial.print("Conectándose al WiFi");
+    }
 
     while (WiFi.status() != WL_CONNECTED) {
         delay(500);
@@ -34,16 +52,36 @@ void conectarWiFi() {
     }
 
     Serial.println();
-    Serial.println("WiFi conectado");
+    if (conectadoPreviamente) {
+        Serial.println("WiFi reconectado con éxito");
+    }
+    else {
+        Serial.println("WiFi conectado con éxito");
+        conectadoPreviamente = true;       
+    }
 
     Serial.print("IP del ESP32: ");
     Serial.println(WiFi.localIP());
+}
+
+void PonerValoresDefaultServos() {
+    servoBase.write(anguloBaseDefault);
+    servoCodo.write(anguloCodoDefault);
+    servoHombro.write(anguloHombroDefault);
+    servoPinza.write(anguloPinzaDefault);    
 }
 
 void setup() {
     Serial.begin(115200);
 
     conectarWiFi();
+
+    servoBase.attach(13);
+    servoCodo.attach(14);
+    servoHombro.attach(15);
+    servoPinza.attach(16);
+
+    PonerValoresDefaultServos();
 
     if (udp.begin(PUERTO_UDP)) {
         Serial.print("Escuchando paquetes UDP en el puerto ");
@@ -54,6 +92,17 @@ void setup() {
 }
 
 void loop() {
+
+    if ((millis() - ultimo_paquete_recibido >= limite_intervalo) && recibiendoPaquetes){
+        Serial.println("Hace 5s que no se recibe un paquete de actualización de la computadora. Volviendo a los valores de fábrica.");
+        PonerValoresDefaultServos();     
+        recibiendoPaquetes = false;
+    }
+
+    if (WiFi.status() != WL_CONNECTED){
+        conectarWiFi();
+    }
+
     int tamanioPaquete = udp.parsePacket();
 
     if (tamanioPaquete <= 0) {
@@ -69,7 +118,7 @@ void loop() {
         return;
     }
 
-    // Terminador necesario para tratar el buffer como texto.
+    // Caracter nulo que se le agrega así desp lo podemos leer bien con sscanf.
     bufferPaquete[cantidadLeida] = '\0';
 
     int cantidadValores = sscanf(
@@ -82,25 +131,26 @@ void loop() {
     );
 
     if (cantidadValores == 4) {
-        // Evitamos valores inválidos.
-        anguloBase = constrain(anguloBase, 0, 180);
-        anguloCodo = constrain(anguloCodo, 0, 180);
-        anguloHombro = constrain(anguloHombro, 0, 180);
-        anguloPinza = constrain(anguloPinza, 0, 180);
-
         Serial.print("Base: ");
         Serial.print(anguloBase);
+        servoBase.write(anguloBase);        
 
         Serial.print(" | Codo: ");
         Serial.print(anguloCodo);
+        servoCodo.write(anguloCodo);        
 
         Serial.print(" | Hombro: ");
         Serial.print(anguloHombro);
+        servoHombro.write(anguloHombro);        
 
         Serial.print(" | Pinza: ");
         Serial.println(anguloPinza);
+        servoPinza.write(anguloPinza);        
+        
+        ultimo_paquete_recibido = millis();
+        recibiendoPaquetes = true;
     } else {
-        Serial.print("Paquete inválido: ");
+        Serial.print("Por alguna razón el paquete recibido llegó mal: ");
         Serial.println(bufferPaquete);
     }
 }
