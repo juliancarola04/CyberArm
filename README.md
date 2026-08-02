@@ -23,16 +23,19 @@
     ```
     pip install -r requirements.txt
     ```
-5. Instalar la aplicacion DroidCam desde la Play Store
-6. Crear una red Mobile Hotspot desde el celular. Se recomienda desactivar los datos.
-7. Conectese desde la computadora a la red WiFi generada por el celular.
-8. Abra la aplicación DroidCam e identifique la dirección IP del dispositivo y el puerto de DroidCam.
-9. Vaya a main.py y asegúrase de reemplazar el valor que se encuentra en la variable ```direccion_camara``` por los correspondientes datos que haya obtenido del punto 8.
+6. Conseguir credenciales de una red local la cual se pueda administrar
+7. Conectar el dispositivo que ejecutará el programa de Python, el celular que se utilizará como cámara y el ESP32. Para conectar el ESP32 dirígete al archivo con el nombre de "credencial.h" situado en la carpeta del ESP32 y coloca las credenciales de la red.
+8. Asegúrate de tener instalada la librería de ESP32Servo en tu IDE de confianza (se usó PlatformIO en este proyecto) y carga el código.
+9. Cuando hayas conectado los 3 dispositivos a la red busca la MAC que tiene cada uno de ellos. La mayoría de routers permiten ver la dirección MAC de los dispositivos conectados a la red. Una vez tengas la MAC de cada uno de los dispositivos resérvales a cada uno una IP en el DHCP asociándola con la MAC.
+![Bind MAC e IP](assets/img/MAC-IP.png "Bind MAC con IP")
+10. Según la IP que le hayas asignado al ESP32 y al celular, pon su dirección en 2 partes del código de Python: ```direccion_camara``` y ```ESP32_IP```.
+11. Instalar la aplicacion DroidCam desde la Play Store y ábrala.
+12. Asegúrese que la IP que le sale en la aplicación de DroidCam sea la misma que puso en el router para el celular.
 
 ### Como ejecutar el proyecto
 Abra la aplicación de DroidCam. Una vez que la haya abierto hay dos opciones posibles:
 * Si se encuentra en VSCode simplemente ejecute el archivo main.py.
-* Si se encuentra en VSCode simplemente ejecute el archivo main.py.
+* Si NO se encuentra en VSCode simplemente ejecute el archivo main.py.
     1. Navegue desde la terminal hasta la carpeta Python
     2. Ejecute ```./.venv/Scripts/Activate.ps1```
     3. Ejecute ```python.exe ./main.py```
