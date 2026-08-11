@@ -1,41 +1,37 @@
 # CyberArm
 
-
-
-
 ### Como preparar el proyecto
-1. Asegurate de tener instalado Python. En este caso se utilizó la versión 3.11.7: https://www.python.org/downloads/release/python-3117/ 
-2. Bajarse el modelo que será usado para detectar los puntos de la mano: https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/latest/hand_landmarker.task
-3. Mover el archivo a la carpeta de Python
-4. Desde la consola accede a la ruta del proyecto y ejectuta los siguientes comandos:
-    ```
-    cd /ruta/de/la/carpeta/python
-    ```
-    ```
-    python.exe -m venv .venv
-    ```
-    ```
-    Set-ExecutionPolicy Unrestricted -Scope Process
-    ```
-    ```
-    ./.venv/Scripts/Activate.ps1
-    ```
-    ```
-    pip install -r requirements.txt
-    ```
-6. Conseguir credenciales de una red local la cual se pueda administrar
-7. Conectar el dispositivo que ejecutará el programa de Python, el celular que se utilizará como cámara y el ESP32. Para conectar el ESP32 dirígete al archivo con el nombre de "credencial.h" situado en la carpeta del ESP32 y coloca las credenciales de la red.
-8. Asegúrate de tener instalada la librería de ESP32Servo en tu IDE de confianza (se usó PlatformIO en este proyecto) y carga el código.
-9. Cuando hayas conectado los 3 dispositivos a la red busca la MAC que tiene cada uno de ellos. La mayoría de routers permiten ver la dirección MAC de los dispositivos conectados a la red. Una vez tengas la MAC de cada uno de los dispositivos resérvales a cada uno una IP en el DHCP asociándola con la MAC.
-![Bind MAC e IP](assets/img/MAC-IP.png "Bind MAC con IP")
-10. Según la IP que le hayas asignado al ESP32 y al celular, pon su dirección en 2 partes del código de Python: ```direccion_camara``` y ```ESP32_IP```.
-11. Instalar la aplicacion DroidCam desde la Play Store y ábrala.
-12. Asegúrese que la IP que le sale en la aplicación de DroidCam sea la misma que puso en el router para el celular.
 
-### Como ejecutar el proyecto
-Abra la aplicación de DroidCam. Una vez que la haya abierto hay dos opciones posibles:
-* Si se encuentra en VSCode simplemente ejecute el archivo main.py.
-* Si NO se encuentra en VSCode simplemente ejecute el archivo main.py.
-    1. Navegue desde la terminal hasta la carpeta Python
-    2. Ejecute ```./.venv/Scripts/Activate.ps1```
-    3. Ejecute ```python.exe ./main.py```
+1. Descargate VSCode (https://code.visualstudio.com/download?_exp_download=fb315fc982).
+2. Descargar DroidCam a través de la Play Store o la App Store
+
+## Python
+
+1. Instalar UV. Para hacer esto abrí PowerShell y ejecutá el siguiente comando: ```powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"```
+2. Bajarse el modelo de Google para detectar los puntos de la mano y colocarlo en la carpeta de Python: https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/latest/hand_landmarker.task
+3. Dentro de la carpeta "Python" en la barra de ruta escribe ```code .``` y dale click al enter. Esto te abrirá la carpeta de Python en VSCode.
+![VSCode Python](assets/img/VSCodePython.png "VSCode Python")
+4. Coloca la dirección IP de la cámara en ```direccion_camara``` y la IP del ESP32 en ```ESP32_IP```.
+5. Abre la consola dentro de VSCode. 
+![VSCode Python Consola](assets/img/ConsolaVSCodePython.png "VSCode Pytho Consola")
+6. Ejecuta ```uv run .\main.py```
+
+## ESP32
+1. Instalá los drivers del ESP32 https://www.youtube.com/watch?v=a2yP7YGnQ_c
+2. Conectá el ESP32 al computador a través de USB.
+2. Abre una ventana de VSCode e instalá PlatformIO.
+![PlatformIO VSCode](assets/img/PlatformIOVSCode.png "PlatformIO VSCode")
+3. Dale click al ícono de la extensión que se formó a la derecha y abrí la carpeta de ESP32.
+![Abrir proyecto PlatformIO](assets/img/AbrirProyectoPlatformIO.png "Abrir proyecto PlatformIO")
+4. En la carpeta "src" se va a encontrar el archivo ```credenciales.h```. Acá colocá el nombre de la red WiFi en ```ssid``` y la contraseña en ```password```
+5. En ```main.cpp``` colocá los pines de los servos en la función setup y colocá los valores por defectos de los ángulos de los servos
+6. Abrí el Administrador de dispositivos de Windows.
+7. Una vez tengas cargado eso, andá a ```platformio.ini``` y colocá el puerto del USB donde tengas enchufado el ESP32.
+![Puerto ESP32](assets/img/PuertoESP32.png "Puerto ESP32")
+8. Cargá el código al ESP32 y si querés abrí la consola serial para monitorear lo que le llegue por puerto serial.
+![VSCode PlatformIO comandos](assets/img/VSCodePlatformIOComandos.png "VSCode PlatformIO comandos")
+
+## Router
+
+Cuando hayas conectado los 3 dispositivos a la red busca la MAC que tiene cada uno de ellos. La mayoría de routers permiten ver la dirección MAC de los dispositivos conectados a la red. Una vez tengas la MAC de cada uno de los dispositivos resérvales a cada uno una IP en el DHCP asociándola con la MAC.
+![Bind MAC e IP](assets/img/MAC-IP.png "Bind MAC con IP")
