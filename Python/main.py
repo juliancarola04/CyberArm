@@ -1,8 +1,15 @@
+# /// script
+# requires-python = ">=3.12"
+# dependencies = [
+#     "mediapipe>=1.0.0",
+#     "opencv-python>=5.0.0.93",
+# ]
+# ///
+
 import socket
 import time
 import cv2 as cv
 import mediapipe as mp
-import numpy as np
 import math
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
