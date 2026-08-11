@@ -19,7 +19,7 @@
 ## ESP32
 1. Instalá los drivers del ESP32 https://www.youtube.com/watch?v=a2yP7YGnQ_c
 2. Conectá el ESP32 al computador a través de USB.
-2. Abre una ventana de VSCode e instalá PlatformIO.
+3. Abre una ventana de VSCode e instalá PlatformIO.
 ![PlatformIO VSCode](assets/img/PlatformIOVSCode.png "PlatformIO VSCode")
 3. Dale click al ícono de la extensión que se formó a la derecha y abrí la carpeta de ESP32.
 ![Abrir proyecto PlatformIO](assets/img/AbrirProyectoPlatformIO.png "Abrir proyecto PlatformIO")
