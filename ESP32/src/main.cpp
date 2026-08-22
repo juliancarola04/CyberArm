@@ -76,10 +76,20 @@ void setup() {
 
     conectarWiFi();
 
-    servoBase.attach(13);
-    servoCodo.attach(14);
-    servoHombro.attach(15);
-    servoPinza.attach(16);
+    ESP32PWM::allocateTimer(0);
+    ESP32PWM::allocateTimer(1);
+    ESP32PWM::allocateTimer(2);
+    ESP32PWM::allocateTimer(3);
+
+    servoBase.setPeriodHertz(50);
+    servoCodo.setPeriodHertz(50);
+    servoHombro.setPeriodHertz(50);
+    servoPinza.setPeriodHertz(50);
+
+    servoBase.attach(13, 500, 2400);
+    servoCodo.attach(14), 500, 2400;
+    servoHombro.attach(15), 500, 1450;
+    servoPinza.attach(16, 500, 1133);
 
     PonerValoresDefaultServos();
 
