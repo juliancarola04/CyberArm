@@ -57,8 +57,24 @@
 ![VSCode PlatformIO comandos](assets/img/VSCodePlatformIOComandos.png "VSCode PlatformIO comandos")
 
 
+## Conexiones físicas
+
+![Conexiones físicas](assets/img/ConexionesFisicas.jpeg "Conexiones físicas")
+
 ## Router
 
 Cuando hayas conectado los 3 dispositivos a la red busca la MAC que tiene cada uno de ellos. La mayoría de routers permiten ver la dirección MAC de los dispositivos conectados a la red. Una vez tengas la MAC de cada uno de los dispositivos resérvales a cada uno una IP en el DHCP asociándola con la MAC.
 
 ![Bind MAC e IP](assets/img/MAC-IP.png "Bind MAC con IP")
+
+## Diagramas de estado
+
+![Diagrama de estado 1](assets/img/Diagrama%20de%20Estado/1.jpeg "Diagrama de estado 1")
+
+![Diagrama de estado 2](assets/img/Diagrama%20de%20Estado/2.jpeg "Diagrama de estado 2")
+
+## Diagrama de Gantt
+
+![Diagrama de Gantt 1](assets/img/Gantt/1.png "Diagrama de Gantt 1")
+
+![Diagrama de Gantt 2](assets/img/Gantt/2.png "Diagrama de Gantt 2")
