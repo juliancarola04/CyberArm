@@ -1,29 +1,41 @@
-// LES DEJO ESTE CÓDIGO DE PRUEBA PARA QUE TESTEEN LOS DATOS QUE LLEGAN. SI QUIEREN VEAN EL ENVIAR LOS DATOS A LOS SERVOS.
-// VEAN BIEN AMBOS CÓDIGOS, EN ESPECIAL EL OTRO.
-
+// CÓDIGO DE PRUEBA: ESP32 + PCA9685 + WIFI/UDP
 #include <Arduino.h>
 #include <WiFi.h>
 #include <WiFiUdp.h>
-#include "credenciales.h" // Hagan un archivo en la misma carpeta llamado credenciales.h y pongan el SSID y la pass de la red. Les dejo el archivo igual por las dudas.
-#include <ESP32Servo.h>
+#include "credenciales.h" // Archivo en la misma carpeta con SSID y pass
+#include <Wire.h>
+#include <Adafruit_PWMServoDriver.h>
 
 const uint16_t PUERTO_UDP = 4210;
-
 WiFiUDP udp;
-
 char bufferPaquete[128];
 
 unsigned long ultimo_paquete_recibido = 0;
 int limite_intervalo = 5000;
 
-Servo servoBase;
-Servo servoCodo;
-Servo servoHombro;
-Servo servoPinza;
+Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
+
+// Canales del PCA9685
+#define CANAL_BASE   0
+#define CANAL_CODO   1
+#define CANAL_HOMBRO 2
+#define CANAL_PINZA  3
+
+// --- LÍMITES EN MICROSEGUNDOS (PWM) ---
+const int BASE_MIN = 500,   BASE_MAX = 2400;   
+const int CODO_MIN = 1133,  CODO_MAX = 2083;   
+const int HOMBRO_MIN = 500, HOMBRO_MAX = 1450; 
+const int PINZA_MIN = 606,  PINZA_MAX = 1450;  
+
+// --- AJUSTE DE LÍMITES FÍSICOS (GRADOS) ---
+const int LIM_BASE_MIN = 0,    LIM_BASE_MAX = 180;
+const int LIM_CODO_MIN = 60,   LIM_CODO_MAX = 150;
+const int LIM_HOMBRO_MIN = 0,  LIM_HOMBRO_MAX = 90; 
+const int LIM_PINZA_MIN = 10,  LIM_PINZA_MAX = 90;
 
 int anguloBaseDefault = 90;
-int anguloCodoDefault = 90;
-int anguloHombroDefault = 90;
+int anguloCodoDefault = 120;
+int anguloHombroDefault = 45; 
 int anguloPinzaDefault = 60;
 
 int anguloBase = 0;
@@ -32,8 +44,14 @@ int anguloHombro = 0;
 int anguloPinza = 0;
 
 bool conectadoPreviamente = false;
-
 bool recibiendoPaquetes = false;
+
+// Función adaptada para mapear los grados a los pulsos del PCA9685
+void moverServo(int canal, int angulo, int minGrados, int maxGrados, int minUs, int maxUs) {
+    angulo = constrain(angulo, minGrados, maxGrados);
+    int microsegundos = map(angulo, minGrados, maxGrados, minUs, maxUs);
+    pwm.writeMicroseconds(canal, microsegundos);
+}
 
 void conectarWiFi() {
     WiFi.mode(WIFI_STA);
@@ -65,10 +83,10 @@ void conectarWiFi() {
 }
 
 void PonerValoresDefaultServos() {
-    servoBase.write(anguloBaseDefault);
-    servoCodo.write(anguloCodoDefault);
-    servoHombro.write(anguloHombroDefault);
-    servoPinza.write(anguloPinzaDefault);    
+    moverServo(CANAL_BASE, anguloBaseDefault, LIM_BASE_MIN, LIM_BASE_MAX, BASE_MIN, BASE_MAX);
+    moverServo(CANAL_CODO, anguloCodoDefault, LIM_CODO_MIN, LIM_CODO_MAX, CODO_MIN, CODO_MAX);
+    moverServo(CANAL_HOMBRO, anguloHombroDefault, LIM_HOMBRO_MIN, LIM_HOMBRO_MAX, HOMBRO_MIN, HOMBRO_MAX);
+    moverServo(CANAL_PINZA, anguloPinzaDefault, LIM_PINZA_MIN, LIM_PINZA_MAX, PINZA_MIN, PINZA_MAX);
 }
 
 void setup() {
@@ -76,20 +94,13 @@ void setup() {
 
     conectarWiFi();
 
-    ESP32PWM::allocateTimer(0);
-    ESP32PWM::allocateTimer(1);
-    ESP32PWM::allocateTimer(2);
-    ESP32PWM::allocateTimer(3);
-
-    servoBase.setPeriodHertz(50);
-    servoCodo.setPeriodHertz(50);
-    servoHombro.setPeriodHertz(50);
-    servoPinza.setPeriodHertz(50);
-
-    servoBase.attach(13, 500, 2400);
-    servoCodo.attach(14), 500, 2400;
-    servoHombro.attach(15), 500, 1450;
-    servoPinza.attach(16, 500, 1133);
+    // Configuración del módulo PCA9685
+    Wire.begin();
+    Wire.setClock(400000); // Fast Mode
+    pwm.begin();
+    pwm.setOscillatorFrequency(27000000);
+    pwm.setPWMFreq(50);
+    delay(10); 
 
     PonerValoresDefaultServos();
 
@@ -119,48 +130,51 @@ void loop() {
         return;
     }
 
-    int cantidadLeida = udp.read(
-        bufferPaquete,
-        sizeof(bufferPaquete) - 1
-    );
+    int cantidadLeida = udp.read(bufferPaquete, sizeof(bufferPaquete) - 1);
 
     if (cantidadLeida <= 0) {
         return;
     }
 
-    // Caracter nulo que se le agrega así desp lo podemos leer bien con sscanf.
     bufferPaquete[cantidadLeida] = '\0';
 
-    int cantidadValores = sscanf(
-        bufferPaquete,
-        "%d,%d,%d,%d",
-        &anguloBase,
-        &anguloCodo,
-        &anguloHombro,
-        &anguloPinza
-    );
+    // Utilizamos la lectura optimizada por tokens en lugar de sscanf
+    char* token = strtok(bufferPaquete, ",");
+    if (token != NULL) {
+        anguloBase = atoi(token);
+        token = strtok(NULL, ",");
+        if (token != NULL) {
+            anguloCodo = atoi(token);
+            token = strtok(NULL, ",");
+            if (token != NULL) {
+                anguloHombro = atoi(token);
+                token = strtok(NULL, ",");
+                if (token != NULL) {
+                    anguloPinza = atoi(token);
 
-    if (cantidadValores == 4) {
-        Serial.print("Base: ");
-        Serial.print(anguloBase);
-        servoBase.write(anguloBase);        
+                    Serial.print("Base: ");
+                    Serial.print(anguloBase);
+                    moverServo(CANAL_BASE, anguloBase, LIM_BASE_MIN, LIM_BASE_MAX, BASE_MIN, BASE_MAX);
 
-        Serial.print(" | Codo: ");
-        Serial.print(anguloCodo);
-        servoCodo.write(anguloCodo);        
+                    Serial.print(" | Codo: ");
+                    Serial.print(anguloCodo);
+                    moverServo(CANAL_CODO, anguloCodo, LIM_CODO_MIN, LIM_CODO_MAX, CODO_MIN, CODO_MAX);
 
-        Serial.print(" | Hombro: ");
-        Serial.print(anguloHombro);
-        servoHombro.write(anguloHombro);        
+                    Serial.print(" | Hombro: ");
+                    Serial.print(anguloHombro);
+                    moverServo(CANAL_HOMBRO, anguloHombro, LIM_HOMBRO_MIN, LIM_HOMBRO_MAX, HOMBRO_MIN, HOMBRO_MAX);
 
-        Serial.print(" | Pinza: ");
-        Serial.println(anguloPinza);
-        servoPinza.write(anguloPinza);        
-        
-        ultimo_paquete_recibido = millis();
-        recibiendoPaquetes = true;
-    } else {
-        Serial.print("Por alguna razón el paquete recibido llegó mal: ");
-        Serial.println(bufferPaquete);
+                    Serial.print(" | Pinza: ");
+                    Serial.println(anguloPinza);
+                    moverServo(CANAL_PINZA, anguloPinza, LIM_PINZA_MIN, LIM_PINZA_MAX, PINZA_MIN, PINZA_MAX);
+                    
+                    ultimo_paquete_recibido = millis();
+                    recibiendoPaquetes = true;
+                } else {
+                    Serial.print("Por alguna razón el paquete recibido llegó mal: ");
+                    Serial.println(bufferPaquete);
+                }
+            }
+        }
     }
 }

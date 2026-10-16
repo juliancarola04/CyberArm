@@ -25,7 +25,7 @@ mp_drawing_styles = vision.drawing_styles
 
 # Configuración de rutas y cámara
 model_path = "./hand_landmarker.task"
-direccion_camara = "http://192.168.0.102:4747/video" # Acá se pone la dirección IP del DroidCam.
+direccion_camara = "http://192.168.0.105:4747/video" # Acá se pone la dirección IP del DroidCam.
 frameADibujar = None
 
 # Acá va las settings del ESP32. Si usamos el router local ponemos la IP que está vinculada a la MAC del router (hay que hacer esto).
@@ -56,9 +56,9 @@ palm_angle_min = -50
 palm_angle_max = 20
 
 # Ángulos para el servo del CODO (subir y bajar la mano dentro del live).
-codo_min = 0
-codo_centro = 90
-codo_max = 180
+codo_min = 60
+codo_centro = 105
+codo_max = 150
 
 # Parámetros de control. Limita el ángulo hasta que lo toma. Si se sube o bajan los valores luego el ángulo será
 # mayor/menor.
@@ -78,7 +78,7 @@ palm_size_min = 0.1
 palm_size_max = 0.5
 
 # Ángulo de la pinza. Se puede cambiar desp.
-claw_open_angle = 60
+claw_open_angle = 90
 claw_close_angle = 0
 
 servo_angle = [base_centro, codo_centro, hombro_centro, claw_open_angle]
