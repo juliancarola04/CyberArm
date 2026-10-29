@@ -52,8 +52,8 @@ base_max = 180
 # Parámetros de control. Limita el ángulo hasta que lo toma. Si se sube o bajan los valores luego el ángulo será
 # mayor/menor.
 # Este parámetro sirve para la base.
-palm_angle_min = -50
-palm_angle_max = 20
+palm_angle_min = -35
+palm_angle_max = 35
 
 # Ángulos para el servo del CODO (subir y bajar la mano dentro del live).
 codo_min = 60
@@ -63,29 +63,29 @@ codo_max = 150
 # Parámetros de control. Limita el ángulo hasta que lo toma. Si se sube o bajan los valores luego el ángulo será
 # mayor/menor.
 # Este parámetro sirve para el codo.
-wrist_y_min = 0.3
-wrist_y_max = 0.9
+wrist_y_min = 0.45
+wrist_y_max = 0.75
 
 # Ángulos para el servo del HOMBRO (alejar y acercar la mano)
-hombro_min = 0
-hombro_centro = 45
-hombro_max = 90
+hombro_min = 40
+hombro_centro = 75
+hombro_max = 110
 
 # Parámetros de control. Limita el ángulo hasta que lo toma. Si se sube o bajan los valores luego el ángulo será
 # mayor/menor.
 # Este parámetro sirve para el hombro.
-palm_size_min = 0.1
-palm_size_max = 0.5
+palm_size_min = 0.05
+palm_size_max = 0.55
 
 # Ángulo de la pinza. Se puede cambiar desp.
-claw_open_angle = 90
-claw_close_angle = 0
+claw_open_angle = 0
+claw_close_angle = 90
 
 servo_angle = [base_centro, codo_centro, hombro_centro, claw_open_angle]
 prev_servo_angle = servo_angle.copy()
 
 # Valor arbitrario a partir de cuando se considera que está abierto/cerrado el puño
-fist_threshold = 7
+fist_threshold = 8.5
 
 #####
 # Ambas funciones se van a usar en conjunto
@@ -207,7 +207,7 @@ def landmark_to_servo_angle(hand_landmarks):
     )
     # Una vez limitado mapeamos, teniendo en cuenta esos topes, el ángulo al grado permitido para ese servo en cuestión.
     servo_angle[0] = mapeo_rango(
-        angle, palm_angle_min, palm_angle_max, base_max, base_min
+        angle, palm_angle_min, palm_angle_max, base_min, base_max
     )
 
     # Ángulo para el Codo (eje Y)
@@ -217,6 +217,7 @@ def landmark_to_servo_angle(hand_landmarks):
     )
 
     # Ángulo para el Hombro (eje Z)
+    print(f"Distancia palma: {palm_size}")
     palm_size_lim = limitar(palm_size, palm_size_min, palm_size_max)
     servo_angle[2] = mapeo_rango(
         palm_size_lim, palm_size_min, palm_size_max, hombro_max, hombro_min
